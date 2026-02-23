@@ -1,0 +1,188 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <title>Marketing Pro - Final Precision Edition</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        :root { --momo: #d82d8b; }
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        
+        body { 
+            font-family: 'Inter', sans-serif; 
+            background: #121214; 
+            color: #efefef; 
+            display: flex; 
+            flex-direction: column; 
+            align-items: center; 
+            padding: 20px; 
+        }
+
+        .panel { 
+            width: 100%; max-width: 375px; background: #232326; 
+            padding: 20px; border-radius: 20px; margin-bottom: 25px; 
+            box-shadow: 0 10px 30px rgba(0,0,0,0.5);
+        }
+        .panel h2 { color: var(--momo); font-size: 18px; margin-bottom: 15px; text-align: center; }
+        
+        .grid-time { display: flex; gap: 10px; margin-bottom: 15px; }
+        label { font-size: 11px; color: #888; text-transform: uppercase; display: block; margin-bottom: 5px; }
+        
+        input, select { 
+            width: 100%; padding: 12px; margin-bottom: 12px; 
+            background: #18181b; border: 1px solid #3f3f46; 
+            color: #fff; border-radius: 12px; font-size: 14px; outline: none;
+        }
+        input:focus { border-color: var(--momo); }
+
+        .btn-download { 
+            width: 100%; padding: 18px; background: var(--momo); 
+            color: white; border: none; border-radius: 14px; 
+            font-weight: bold; font-size: 16px; cursor: pointer; transition: 0.3s;
+        }
+        .btn-download:hover { background: #b01e6a; }
+
+        /* --- Vùng Chụp Ảnh --- */
+        #capture-area { 
+            position: relative; width: 375px; height: 812px; 
+            background: #fff; overflow: hidden;
+        }
+        #bg-image { width: 100%; height: 100%; display: block; }
+
+        .overlay { position: absolute; color: #333; white-space: nowrap; pointer-events: none; line-height: 1.1; }
+
+        /* Đồng hồ iPhone */
+        #out-time {
+            top: 18px; /* Tọa độ ước tính cho thanh trạng thái */
+            left: 32px;
+            font-size: 15px;
+            font-weight: 700;
+            color: #000;
+        }
+
+        /* --- TỌA ĐỘ PIXEL MỚI CỦA BẠN --- */
+        #bank-group { 
+            top: 348.89498px; 
+            left: 21.752784px; 
+            display: flex; 
+            align-items: center; 
+            gap: 12px; 
+            color: white; 
+        }
+        #out-stk { 
+            top: 436.413569px; 
+            left: 31.067843px; 
+            font-size: 16px; 
+            font-weight: 600; 
+        }
+        #out-name { 
+            top: 504.135686px; 
+            left: 31.09851px; 
+            font-size: 15px; 
+            text-transform: uppercase; 
+            font-weight: 600; 
+        }
+        #out-amount { 
+            top: 575.549255px; 
+            left: 14.413569px; 
+            font-size: 21px; 
+            font-weight: 700; 
+            color: #000; 
+        }
+
+        /* Styles Ngân hàng */
+        .logo-box { width: 44px; height: 44px; background: white; border-radius: 50%; display: flex; align-items: center; justify-content: center; overflow: hidden; }
+        .logo-box img { width: 80%; }
+        .bank-txt p { margin: 0; }
+    </style>
+</head>
+<body>
+
+<div class="panel">
+    <h2>Cấu Hình Quảng Bá</h2>
+    
+    <label>Giờ iPhone</label>
+    <div class="grid-time">
+        <input type="number" id="in-hour" placeholder="Giờ" oninput="sync()">
+        <input type="number" id="in-min" placeholder="Phút" oninput="sync()">
+    </div>
+
+    <label>Thông tin nhận tiền</label>
+    <select id="in-bank" onchange="sync()">
+        <option value="MB|MBBank|Ngân hàng TMCP Quân Đội">MBBank</option>
+        <option value="VCB|Vietcombank|NH TMCP Ngoại Thương VN">Vietcombank</option>
+        <option value="TCB|Techcombank|NH TMCP Kỹ Thương">Techcombank</option>
+        <option value="ACB|ACB|Ngân hàng TMCP Á Châu">ACB</option>
+    </select>
+    <input type="text" id="in-stk" placeholder="Số tài khoản" oninput="sync()">
+    <input type="text" id="in-name" placeholder="Họ tên khách hàng" oninput="sync()">
+    <input type="text" id="in-amount" placeholder="Số tiền hưởng ưu đãi" oninput="sync()">
+    
+    <button class="btn-download" onclick="exportImg()">TẢI ẢNH SIÊU NÉT (4K)</button>
+</div>
+
+<div id="capture-area">
+    <img src="template.png" id="bg-image">
+
+    <div id="out-time" class="overlay">21:15</div>
+
+    <div id="bank-group" class="overlay">
+        <div class="logo-box">
+            <img id="out-logo" src="https://api.vietqr.io/img/MB.png">
+        </div>
+        <div class="bank-txt">
+            <p id="out-bank-name" style="font-weight:700; font-size:16px;">MBBank</p>
+            <p id="out-bank-sub" style="font-size:11px;">Ngân hàng TMCP Quân Đội</p>
+        </div>
+    </div>
+
+    <div id="out-stk" class="overlay"></div>
+    <div id="out-name" class="overlay"></div>
+    <div id="out-amount" class="overlay"></div>
+</div>
+
+<script>
+    function sync() {
+        // Cập nhật thời gian (Nếu trống thì mặc định 21:15)
+        const h = document.getElementById('in-hour').value || '21';
+        const m = document.getElementById('in-min').value || '15';
+        document.getElementById('out-time').innerText = `${h.toString().padStart(2, '0')}:${m.toString().padStart(2, '0')}`;
+
+        // Cập nhật Ngân hàng
+        const b = document.getElementById('in-bank').value.split('|');
+        document.getElementById('out-logo').src = `https://api.vietqr.io/img/${b[0]}.png`;
+        document.getElementById('out-bank-name').innerText = b[1];
+        document.getElementById('out-bank-sub').innerText = b[2];
+
+        // Cập nhật STK (Bỏ trống nếu không nhập)
+        document.getElementById('out-stk').innerText = document.getElementById('in-stk').value || "";
+
+        // Cập nhật Tên (Bỏ trống nếu không nhập - Luôn IN HOA)
+        const nameVal = document.getElementById('in-name').value;
+        document.getElementById('out-name').innerText = nameVal ? nameVal.toUpperCase() : "";
+        
+        // Cập nhật Tiền (Bỏ trống nếu không nhập)
+        let amountVal = document.getElementById('in-amount').value.replace(/\D/g, '');
+        document.getElementById('out-amount').innerText = amountVal ? new Intl.NumberFormat('vi-VN').format(amountVal) : "";
+    }
+
+    async function exportImg() {
+        const area = document.getElementById("capture-area");
+        const canvas = await html2canvas(area, { 
+            scale: 4, 
+            useCORS: true,
+            logging: false
+        });
+        const link = document.createElement('a');
+        link.download = 'Marketing_Image_' + Date.now() + '.png';
+        link.href = canvas.toDataURL("image/png");
+        link.click();
+    }
+
+    // Khởi tạo
+    sync();
+</script>
+
+</body>
+</html>
