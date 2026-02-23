@@ -1,0 +1,162 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <title>Marketing Pro - Drag & Drop Fix</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
+    <style>
+        :root { --pink: #d82d8b; }
+        body { font-family: 'Inter', sans-serif; background: #111; color: #eee; display: flex; flex-direction: column; align-items: center; padding: 20px; margin: 0; touch-action: none; }
+        
+        /* Panel điều khiển */
+        .panel { width: 100%; max-width: 375px; background: #222; padding: 20px; border-radius: 15px; box-sizing: border-box; margin-bottom: 20px; border: 1px solid #333; }
+        input, select { width: 100%; padding: 12px; margin: 8px 0; background: #000; border: 1px solid #444; color: #fff; border-radius: 8px; box-sizing: border-box; font-size: 14px; }
+        .btn { width: 100%; padding: 15px; border: none; border-radius: 10px; font-weight: bold; cursor: pointer; margin-top: 10px; }
+        .btn-main { background: var(--pink); color: white; }
+        .btn-out { background: #444; color: #0f0; font-size: 12px; }
+
+        /* Vùng hiển thị ảnh - Chống biến dạng */
+        #capture-area { 
+            position: relative; 
+            width: 375px; 
+            height: 812px; 
+            background: #fff; 
+            overflow: hidden;
+            touch-action: none; /* Tắt cuộn trang khi chạm vào ảnh */
+            user-select: none;
+        }
+        #bg-image { width: 100%; height: 100%; pointer-events: none; }
+
+        /* Phần tử có thể kéo */
+        .drag-item { 
+            position: absolute; 
+            color: #333; 
+            white-space: nowrap; 
+            cursor: move;
+            background: rgba(216, 45, 139, 0.2);
+            border: 1px dashed var(--pink);
+            padding: 2px 5px;
+            border-radius: 4px;
+        }
+
+        /* Định vị mặc định (Bạn sẽ kéo lại cho chuẩn) */
+        #bank-group { top: 346px; left: 11px; display: flex; align-items: center; gap: 10px; color: white; }
+        #out-stk { top: 429px; left: 20px; font-weight: 600; }
+        #out-name { top: 500px; left: 22px; font-weight: 600; text-transform: uppercase; }
+        #out-amount { top: 571px; left: 14px; font-weight: 700; font-size: 20px; }
+
+        .logo-c { width: 44px; height: 44px; background: white; border-radius: 50%; display: flex; align-items: center; justify-content: center; overflow: hidden; }
+        .logo-c img { width: 80%; }
+        p { margin: 0; }
+    </style>
+</head>
+<body>
+
+<div class="panel">
+    <select id="in-bank" onchange="sync()">
+        <option value="MB|MBBank|Ngân hàng TMCP Quân Đội">MBBank</option>
+        <option value="VCB|Vietcombank|NH Ngoại Thương VN">Vietcombank</option>
+        <option value="TCB|Techcombank|NH Kỹ Thương VN">Techcombank</option>
+    </select>
+    <input type="text" id="in-stk" placeholder="Số tài khoản / SĐT" oninput="sync()">
+    <input type="text" id="in-name" placeholder="Họ tên khách" oninput="sync()">
+    <input type="text" id="in-amount" placeholder="Số tiền" oninput="sync()">
+    
+    <button class="btn btn-main" onclick="download()">TẢI ẢNH VỀ MÁY</button>
+    <button class="btn btn-out" onclick="exportCoords()">XUẤT TỌA ĐỘ CHUẨN</button>
+    <textarea id="coords-box" readonly style="width:100%; height:50px; margin-top:10px; background:#000; color:#0f0; border:none; padding:5px; font-size:10px;"></textarea>
+</div>
+
+<div id="capture-area">
+    <img src="template.png" id="bg-image">
+
+    <div id="bank-group" class="drag-item">
+        <div class="logo-c"><img id="out-logo" src="https://api.vietqr.io/img/MB.png"></div>
+        <div class="bank-t">
+            <p id="out-bank-name" style="font-weight:700; font-size:16px;">MBBank</p>
+            <p id="out-bank-sub" style="font-size:11px;">Ngân hàng TMCP Quân Đội</p>
+        </div>
+    </div>
+
+    <div id="out-stk" class="drag-item">9990000776</div>
+    <div id="out-name" class="drag-item">NGUYEN VAN A</div>
+    <div id="out-amount" class="drag-item">800.000</div>
+</div>
+
+<script>
+    // Xử lý kéo thả hỗ trợ cả Touch (Điện thoại) và Mouse (Máy tính)
+    function initDraggable(el) {
+        let startX, startY, initialLeft, initialTop;
+
+        const onStart = (e) => {
+            const point = e.type.includes('touch') ? e.touches[0] : e;
+            startX = point.clientX;
+            startY = point.clientY;
+            initialLeft = el.offsetLeft;
+            initialTop = el.offsetTop;
+
+            document.addEventListener(e.type.includes('touch') ? 'touchmove' : 'mousemove', onMove, { passive: false });
+            document.addEventListener(e.type.includes('touch') ? 'touchend' : 'mouseup', onEnd);
+        };
+
+        const onMove = (e) => {
+            if (e.cancelable) e.preventDefault(); // Ngăn chặn cuộn trang khi đang kéo
+            const point = e.type.includes('touch') ? e.touches[0] : e;
+            el.style.left = (initialLeft + (point.clientX - startX)) + 'px';
+            el.style.top = (initialTop + (point.clientY - startY)) + 'px';
+        };
+
+        const onEnd = (e) => {
+            document.removeEventListener(e.type.includes('touch') ? 'touchmove' : 'mousemove', onMove);
+            document.removeEventListener(e.type.includes('touch') ? 'touchend' : 'mouseup', onEnd);
+        };
+
+        el.addEventListener('mousedown', onStart);
+        el.addEventListener('touchstart', onStart, { passive: false });
+    }
+
+    document.querySelectorAll('.drag-item').forEach(initDraggable);
+
+    function sync() {
+        const bank = document.getElementById('in-bank').value.split('|');
+        document.getElementById('out-logo').src = `https://api.vietqr.io/img/${bank[0]}.png`;
+        document.getElementById('out-bank-name').innerText = bank[1];
+        document.getElementById('out-bank-sub').innerText = bank[2];
+        document.getElementById('out-stk').innerText = document.getElementById('in-stk').value || '---';
+        document.getElementById('out-name').innerText = (document.getElementById('in-name').value || '---').toUpperCase();
+        let val = document.getElementById('in-amount').value.replace(/\D/g, '');
+        document.getElementById('out-amount').innerText = val ? new Intl.NumberFormat('vi-VN').format(val) : '0';
+    }
+
+    function exportCoords() {
+        let res = "";
+        document.querySelectorAll('.drag-item').forEach(el => {
+            res += `#${el.id} { top: ${el.style.top}; left: ${el.style.left}; }\n`;
+        });
+        document.getElementById('coords-box').value = res;
+        alert("Đã xuất tọa độ! Hãy copy và lưu lại.");
+    }
+
+    async function download() {
+        const area = document.getElementById("capture-area");
+        // Tạm ẩn khung hồng trước khi chụp
+        document.querySelectorAll('.drag-item').forEach(el => {
+            el.style.background = 'transparent';
+            el.style.border = 'none';
+        });
+        const canvas = await html2canvas(area, { scale: 3, useCORS: true });
+        const link = document.createElement('a');
+        link.download = 'marketing_bill.png';
+        link.href = canvas.toDataURL();
+        link.click();
+        // Hiện lại khung hồng để tiếp tục chỉnh
+        document.querySelectorAll('.drag-item').forEach(el => {
+            el.style.background = 'rgba(216, 45, 139, 0.2)';
+            el.style.border = '1px dashed var(--pink)';
+        });
+    }
+</script>
+
+</body>
+</html>
