@@ -1,0 +1,148 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <title>Siêu Công Cụ Đo Tọa Độ - Pixel Perfect</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
+    <style>
+        :root { --momo: #d82d8b; }
+        body { font-family: 'Inter', sans-serif; background: #121212; color: #eee; display: flex; padding: 20px; gap: 20px; justify-content: center; }
+        
+        .panel { width: 350px; background: #1e1e1e; padding: 20px; border-radius: 15px; border: 1px solid #333; }
+        .panel h2 { color: var(--momo); font-size: 18px; margin-bottom: 20px; }
+        
+        .guide { font-size: 12px; color: #aaa; background: #222; padding: 10px; border-radius: 8px; margin-bottom: 15px; border-left: 3px solid var(--momo); }
+        
+        input, select { width: 100%; padding: 10px; background: #000; border: 1px solid #444; color: white; border-radius: 8px; margin-bottom: 10px; }
+        
+        .btn { width: 100%; padding: 12px; border: none; border-radius: 8px; font-weight: bold; cursor: pointer; margin-top: 10px; }
+        .btn-coords { background: lime; color: #000; }
+        
+        /* Area hiển thị */
+        #capture-area { 
+            position: relative; 
+            width: 375px; 
+            height: 812px; 
+            background: #fff; 
+            overflow: hidden;
+            border: 2px solid var(--momo);
+        }
+        #bg-image { width: 100%; height: 100%; display: block; pointer-events: none; }
+
+        .overlay { 
+            position: absolute; 
+            color: #222; 
+            cursor: move; 
+            user-select: none;
+            white-space: nowrap;
+            padding: 2px 5px;
+            background: rgba(0, 255, 0, 0.2); /* Màu xanh để dễ nhìn vị trí */
+            border: 1px solid lime;
+            line-height: 1;
+        }
+        .overlay.selected { border: 2px solid red; background: rgba(255, 0, 0, 0.2); }
+
+        /* Tọa độ hiện tại của bạn */
+        #bank-group { top: 346.95px; left: 11.23px; display: flex; align-items: center; gap: 12px; color: white; }
+        #out-stk { top: 429.97px; left: 20.25px; font-size: 16px; font-weight: 600; }
+        #out-name { top: 500.12px; left: 22.03px; font-size: 15px; text-transform: uppercase; font-weight: 600; }
+        #out-amount { top: 571.69px; left: 14px; font-size: 21px; font-weight: 700; }
+
+        .logo-c { width: 44px; height: 44px; background: white; border-radius: 50%; display: flex; align-items: center; justify-content: center; overflow: hidden; }
+        .logo-c img { width: 80%; }
+    </style>
+</head>
+<body>
+
+<div class="panel">
+    <h2>Chế độ Đo chính xác</h2>
+    <div class="guide">
+        1. Click vào chữ để chọn.<br>
+        2. Kéo chuột hoặc dùng <b>phím mũi tên</b> trên bàn phím để di chuyển từng pixel.<br>
+        3. Bấm nút xanh để lấy tọa độ.
+    </div>
+    
+    <input type="text" id="in-stk" placeholder="Số tài khoản..." oninput="sync()">
+    <input type="text" id="in-name" placeholder="Họ tên..." oninput="sync()">
+    <input type="text" id="in-amount" placeholder="Số tiền..." oninput="sync()">
+
+    <button class="btn btn-coords" onclick="getCoords()">XUẤT TỌA ĐỘ CHUẨN</button>
+    <textarea id="output" style="width:100%; height:120px; margin-top:10px; background:#000; color:lime; font-size:11px; border:none; padding:10px;"></textarea>
+</div>
+
+<div id="capture-area">
+    <img src="template.png" id="bg-image">
+
+    <div id="bank-group" class="overlay dragg" onclick="selectEl(this)">
+        <div class="logo-c"><img id="out-logo" src="https://api.vietqr.io/img/MB.png"></div>
+        <div class="bank-t">
+            <p style="font-weight:700; font-size:16px; margin:0;">MBBank</p>
+            <p style="font-size:11px; margin:0;">Ngân hàng TMCP Quân Đội</p>
+        </div>
+    </div>
+
+    <div id="out-stk" class="overlay dragg" onclick="selectEl(this)">2999988882007</div>
+    <div id="out-name" class="overlay dragg" onclick="selectEl(this)">NGUYEN VAN NAM</div>
+    <div id="out-amount" class="overlay dragg" onclick="selectEl(this)">800.000</div>
+</div>
+
+<script>
+    let selectedEl = null;
+
+    function selectEl(el) {
+        if(selectedEl) selectedEl.classList.remove('selected');
+        selectedEl = el;
+        selectedEl.classList.add('selected');
+    }
+
+    // Di chuyển bằng phím mũi tên
+    document.addEventListener('keydown', (e) => {
+        if (!selectedEl) return;
+        let top = parseFloat(selectedEl.style.top || window.getComputedStyle(selectedEl).top);
+        let left = parseFloat(selectedEl.style.left || window.getComputedStyle(selectedEl).left);
+        let step = e.shiftKey ? 10 : 1; // Nhấn Shift để di chuyển nhanh 10px
+
+        if (e.key === 'ArrowUp') selectedEl.style.top = (top - step) + 'px';
+        if (e.key === 'ArrowDown') selectedEl.style.top = (top + step) + 'px';
+        if (e.key === 'ArrowLeft') selectedEl.style.left = (left - step) + 'px';
+        if (e.key === 'ArrowRight') selectedEl.style.left = (left + step) + 'px';
+        
+        if(['ArrowUp','ArrowDown','ArrowLeft','ArrowRight'].includes(e.key)) e.preventDefault();
+    });
+
+    // Logic kéo chuột
+    document.querySelectorAll('.dragg').forEach(el => {
+        let isMoving = false;
+        el.onmousedown = (e) => {
+            selectEl(el);
+            isMoving = true;
+            let ox = e.clientX - el.offsetLeft;
+            let oy = e.clientY - el.offsetTop;
+            document.onmousemove = (e) => {
+                if(!isMoving) return;
+                el.style.left = (e.clientX - ox) + 'px';
+                el.style.top = (e.clientY - oy) + 'px';
+            };
+            document.onmouseup = () => isMoving = false;
+        };
+    });
+
+    function sync() {
+        document.getElementById('out-stk').innerText = document.getElementById('in-stk').value || '---';
+        document.getElementById('out-name').innerText = (document.getElementById('in-name').value || '---').toUpperCase();
+        let v = document.getElementById('in-amount').value.replace(/\D/g, '');
+        document.getElementById('out-amount').innerText = v ? new Intl.NumberFormat('vi-VN').format(v) : '0';
+    }
+
+    function getCoords() {
+        let res = "";
+        document.querySelectorAll('.overlay').forEach(el => {
+            res += `#${el.id} { top: ${el.style.top || window.getComputedStyle(el).top}; left: ${el.style.left || window.getComputedStyle(el).left}; }\n`;
+        });
+        document.getElementById('output').value = res;
+    }
+</script>
+
+</body>
+</html>
