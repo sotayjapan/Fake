@@ -1,0 +1,96 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Mất kết nối máy chủ | Server Down</title>
+    <style>
+        body {
+            background-color: #f4f7f6;
+            color: #333;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            height: 100vh;
+            margin: 0;
+            text-align: center;
+        }
+
+        .container {
+            max-width: 600px;
+            padding: 40px;
+        }
+
+        .error-code {
+            font-size: 120px;
+            font-weight: bold;
+            color: #e74c3c;
+            margin: 0;
+            line-height: 1;
+        }
+
+        .error-message {
+            font-size: 24px;
+            margin: 20px 0;
+            color: #2c3e50;
+        }
+
+        .description {
+            font-size: 16px;
+            color: #7f8c8d;
+            margin-bottom: 30px;
+        }
+
+        .icon-box {
+            font-size: 80px;
+            margin-bottom: 20px;
+        }
+
+        /* Hiệu ứng nhấp nháy đèn cảnh báo */
+        .status-dot {
+            height: 15px;
+            width: 15px;
+            background-color: #e74c3c;
+            border-radius: 50%;
+            display: inline-block;
+            margin-right: 10px;
+            animation: blink 1.5s infinite;
+        }
+
+        @keyframes blink {
+            0% { opacity: 1; }
+            50% { opacity: 0.3; }
+            100% { opacity: 1; }
+        }
+
+        .btn {
+            text-decoration: none;
+            background-color: #3498db;
+            color: white;
+            padding: 12px 25px;
+            border-radius: 5px;
+            transition: background 0.3s;
+        }
+
+        .btn:hover {
+            background-color: #2980b9;
+        }
+    </style>
+</head>
+<body>
+
+    <div class="container">
+        <div class="icon-box">⚠️</div>
+        <h1 class="error-code">503</h1>
+        <p class="error-message">Máy chủ tạm thời không hoạt động</p>
+        <p class="description">
+            <span class="status-dot"></span>
+            Hiện tại chúng tôi không thể kết nối đến cơ sở dữ liệu. 
+            Có vẻ như hệ thống đang được bảo trì hoặc bị quá tải. Vui lòng quay lại sau vài phút.
+        </p>
+        <a href="javascript:location.reload();" class="btn">Thử tải lại trang</a>
+    </div>
+
+</body>
+</html>
